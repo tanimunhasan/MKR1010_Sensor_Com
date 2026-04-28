@@ -1,4 +1,4 @@
-app.cpp.o: ..\app.cpp \
+store.cpp.o: ..\store.cpp \
  C:\Users\B4T\Downloads\sloeber-ide-V4.4.3-win32.win32.x86_64\Sloeber\arduinoPlugin\packages\arduino\hardware\samd\1.8.9\cores\arduino/Arduino.h \
  C:\Users\B4T\Downloads\sloeber-ide-V4.4.3-win32.win32.x86_64\Sloeber\arduinoPlugin\packages\arduino\hardware\samd\1.8.9\cores\arduino/avr/pgmspace.h \
  C:\Users\B4T\Downloads\sloeber-ide-V4.4.3-win32.win32.x86_64\Sloeber\arduinoPlugin\packages\arduino\hardware\samd\1.8.9\cores\arduino/avr/interrupt.h \
@@ -104,7 +104,7 @@ app.cpp.o: ..\app.cpp \
  C:\Users\B4T\Downloads\sloeber-ide-V4.4.3-win32.win32.x86_64\Sloeber\arduinoPlugin\packages\arduino\hardware\samd\1.8.9\cores\arduino/USB/CDC.h \
  C:\Users\B4T\Downloads\sloeber-ide-V4.4.3-win32.win32.x86_64\Sloeber\arduinoPlugin\packages\arduino\hardware\samd\1.8.9\cores\arduino/USB/USBDesc.h \
  C:\Users\B4T\Downloads\sloeber-ide-V4.4.3-win32.win32.x86_64\Sloeber\arduinoPlugin\packages\arduino\hardware\samd\1.8.9\cores\arduino/USB/PluggableUSB.h \
- ..\DynamentSensor.h ..\app.h ..\store.h
+ ..\DynamentSensor.h ..\store.h ..\app.h
 
 C:\Users\B4T\Downloads\sloeber-ide-V4.4.3-win32.win32.x86_64\Sloeber\arduinoPlugin\packages\arduino\hardware\samd\1.8.9\cores\arduino/Arduino.h:
 
@@ -318,6 +318,6 @@ C:\Users\B4T\Downloads\sloeber-ide-V4.4.3-win32.win32.x86_64\Sloeber\arduinoPlug
 
 ..\DynamentSensor.h:
 
-..\app.h:
-
 ..\store.h:
+
+..\app.h:

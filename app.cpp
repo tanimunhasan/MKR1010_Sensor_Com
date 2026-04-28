@@ -1,6 +1,8 @@
 #include <Arduino.h>
 #include "DynamentSensor.h"
 #include "app.h"
+#include "store.h"
+
 
 DynamentSensor dynament(Serial1);
 
@@ -17,7 +19,7 @@ static uint32_t receiveStartMs = 0;
 static uint32_t finishStartMs = 0;
 static const uint32_t responseTimeoutMs = 2000;
 static const uint32_t cycleDelayMs = 2000;
-static float gasValue = 0.0f;
+
 
 void InitialiseDynamentSensorTask(void)
 {
@@ -25,6 +27,7 @@ void InitialiseDynamentSensorTask(void)
     {
         case INIT_START_SENSOR:
             Serial.println("INIT_START_SENSOR");
+            Store_Init();
             dynament.begin(9600);
             dynamentState = INIT_SEND_REQUEST;
             break;
@@ -51,19 +54,22 @@ void InitialiseDynamentSensorTask(void)
                 if (dynament.getResponse() == DynamentSensor::NEW_DATA ||
                     dynament.getResponse() == DynamentSensor::NEW_DATA_OUTLIER)
                 {
-                    gasValue = dynament.getLatestGasValue();
+                    float gas1 = dynament.getLatestGasValue();
+                    float gas2 = dynament.getLatestGasValue2();
+                    uint16_t status1 = dynament.getLatestStatus1();
+                    uint16_t status2 = dynament.getLatestStatus2();
 
                     Serial.print("Gas Value 1: ");
-                    Serial.println(gasValue, 3);
+                    Serial.println(gas1, 3);
 
                     Serial.print("Gas Value 2: ");
-                    Serial.println(dynament.getLatestGasValue2(), 3);
+                    Serial.println(gas2, 3);
 
                     Serial.print("Status1: ");
-                    Serial.println(dynament.getLatestStatus1());
+                    Serial.println(status1);
 
                     Serial.print("Status2: ");
-                    Serial.println(dynament.getLatestStatus2());
+                    Serial.println(status2);
                 }
                 else
                 {

@@ -109,19 +109,20 @@ uint16_t DynamentSensor::updateCRCTab(uint16_t index)
 
 void DynamentSensor::resetState()
 {
-	_receivingPacket = false;
-	_rxCount = 0;
-	_dleReceived = false;
-	_command= 0;
-	_eofReceived = false;
-	_rcvCsum = 0;
-	_packetComplete = false;
-	_csumError = false;
-	_csumByteReceived = 0;
-	_packetNAKed = false;
-	_packetACKed = false;
-	_errorCode = 0;
-	_latestPacketValid = false;
+    _receivingPacket = false;
+    _rxCount = 0;
+    _dleReceived = false;
+    _command = 0;
+    _eofReceived = false;
+    _rcvCsum = 0;
+    _calcCsum = 0;          // IMPORTANT FIX
+    _packetComplete = false;
+    _csumError = false;
+    _csumByteReceived = 0;
+    _packetNAKed = false;
+    _packetACKed = false;
+    _errorCode = 0;
+    _latestPacketValid = false;
 }
 
 void DynamentSensor::packetSent()
@@ -131,9 +132,18 @@ void DynamentSensor::packetSent()
 
 bool DynamentSensor::sendLiveData2Request()
 {
-	_msgReceived = false;
-	_msgResponse = NO_RESPONSE;
-	return sendPacket(READ_VAR, LIVE_DATA_2, 0, nullptr);
+    // Clear old UART bytes before sending new request
+    while (_serial.available())
+    {
+        _serial.read();
+    }
+
+    resetState();
+
+    _msgReceived = false;
+    _msgResponse = NO_RESPONSE;
+
+    return sendPacket(READ_VAR, LIVE_DATA_2, 0, nullptr);
 }
 
 bool DynamentSensor::sendPacket(uint8_t cmd, uint8_t variableID, uint8_t dlen, const uint8_t* dataPtr)
@@ -228,20 +238,27 @@ bool DynamentSensor::processIncomingByte(uint8_t chr)
         {
             _receivingPacket = true;
             _rxCount = 0;
+            _calcCsum = 0;
+
             _rxBuffer[_rxCount++] = chr;
             _calcCsum = updateChecksum(_calcCsum, chr);
             _dleReceived = true;
+            return false;
         }
         else if (_dleReceived)
         {
+            // Escaped DLE byte
             _rxBuffer[_rxCount++] = chr;
             _calcCsum = updateChecksum(_calcCsum, chr);
+            _dleReceived = false;
+            return false;
         }
         else
         {
             _dleReceived = true;
             _rxBuffer[_rxCount++] = chr;
             _calcCsum = updateChecksum(_calcCsum, chr);
+            return false;
         }
     }
     else if (chr == EOF_MARK && _dleReceived && !_eofReceived)
@@ -262,6 +279,7 @@ bool DynamentSensor::processIncomingByte(uint8_t chr)
             _rcvCsum = static_cast<uint16_t>(
                 (_rxBuffer[_rxCount - 2] << 8) | _rxBuffer[_rxCount - 1]
             );
+
             _packetComplete = true;
 
             if (_rcvCsum != _calcCsum)
@@ -282,14 +300,19 @@ bool DynamentSensor::processIncomingByte(uint8_t chr)
         if (_dleReceived)
         {
             _command = chr;
+
+            // IMPORTANT:
+            // ACK is only acknowledgement. It is NOT gas data.
+            // Ignore it and keep waiting for the real DAT packet.
+            if (_command == ACK)
+            {
+                resetState();
+                return false;
+            }
+
             if (_command == NAK)
             {
                 _packetNAKed = true;
-            }
-            if (_command == ACK)
-            {
-                _packetACKed = true;
-                _packetComplete = true;
             }
         }
 
@@ -304,7 +327,32 @@ bool DynamentSensor::processIncomingByte(uint8_t chr)
 
     if (_packetComplete)
     {
+        if (_packetNAKed)
+        {
+            _latestPacketValid = false;
+            _msgResponse = INVALID_DATA;
+            _msgReceived = true;
+            return true;
+        }
+
+        if (_csumError)
+        {
+            _latestPacketValid = false;
+            _msgResponse = FRAME_CRC_ERROR;
+            _msgReceived = true;
+            return true;
+        }
+
         processReceivedPacket();
+
+        if (_msgResponse == NO_RESPONSE)
+        {
+            _latestPacketValid = false;
+            _msgResponse = INVALID_DATA;
+            _msgReceived = true;
+            return true;
+        }
+
         _latestPacketValid = true;
         _msgReceived = true;
         return true;
